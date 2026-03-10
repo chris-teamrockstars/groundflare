@@ -1,10 +1,7 @@
-package socks5
+package socks
 
-import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-)
+import "testing"
+import "github.com/stretchr/testify/assert"
 
 func TestStaticCredentials(t *testing.T) {
 	creds := StaticCredentials{

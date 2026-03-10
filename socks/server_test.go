@@ -1,23 +1,19 @@
-package socks5
+package socks
 
-import (
-	"bytes"
-	"context"
-	"encoding/binary"
-	"errors"
-	"io"
-	"log"
-	"net"
-	"os"
-	"testing"
-	"time"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"golang.org/x/net/proxy"
-
-	"groundflare/socks/statute"
-)
+import "bytes"
+import "context"
+import "encoding/binary"
+import "errors"
+import "io"
+import "log"
+import "net"
+import "os"
+import "testing"
+import "time"
+import "github.com/stretchr/testify/assert"
+import "github.com/stretchr/testify/require"
+import "golang.org/x/net/proxy"
+import "groundflare/socks/statute"
 
 func TestSOCKS5_Connect(t *testing.T) {
 	t.Run("connect", func(t *testing.T) {

@@ -1,10 +1,7 @@
-package socks5
+package socks
 
-import (
-	"context"
-
-	"groundflare/socks/statute"
-)
+import "context"
+import "groundflare/socks/statute"
 
 // RuleSet is used to provide custom rules to allow or prohibit actions
 type RuleSet interface {

@@ -1,13 +1,9 @@
-package socks5
+package socks
 
-import (
-	"context"
-	"testing"
-
-	"github.com/stretchr/testify/require"
-
-	"groundflare/socks/statute"
-)
+import "context"
+import "testing"
+import "github.com/stretchr/testify/require"
+import "groundflare/socks/statute"
 
 func TestPermitCommand(t *testing.T) {
 	var r RuleSet

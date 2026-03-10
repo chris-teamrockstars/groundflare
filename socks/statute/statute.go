@@ -4,9 +4,6 @@ import (
 	"errors"
 )
 
-// VersionSocks5 socks protocol version
-const VersionSocks5 = byte(0x05)
-
 // request command defined
 const (
 	CommandConnect   = byte(0x01)
@@ -41,15 +38,6 @@ const (
 	RepCommandNotSupported
 	RepAddrTypeNotSupported
 	// 0x09 - 0xff unassigned
-)
-
-// auth defined
-const (
-	// user password version
-	UserPassAuthVersion = byte(0x01)
-	// auth status
-	AuthSuccess = byte(0x00)
-	AuthFailure = byte(0x01)
 )
 
 // error defined

@@ -1,18 +1,21 @@
-package socks5
+package socks
 
-import (
-	"bufio"
-	"context"
-	"crypto/tls"
-	"errors"
-	"fmt"
-	"io"
-	"log"
-	"net"
-
-	"groundflare/socks/bufferpool"
-	"groundflare/socks/statute"
-)
+import "bufio"
+import "context"
+import "crypto/tls"
+import "errors"
+import "fmt"
+import "io"
+import "log"
+import "net"
+import "groundflare/socks/bufferpool"
+import "groundflare/socks/authenticators"
+import socks_errors "groundflare/socks/errors"
+import "groundflare/socks/interfaces"
+import "groundflare/socks/loggers"
+import "groundflare/socks/protocol"
+import "groundflare/socks/statute"
+import "groundflare/socks/types"
 
 // GPool is used to implement custom goroutine pool default use goroutine
 type GPool interface {
@@ -25,11 +28,11 @@ type Server struct {
 	// authMethods can be provided to implement authentication
 	// By default, "no-auth" mode is enabled.
 	// For password-based auth use UserPassAuthenticator.
-	authMethods []Authenticator
+	authMethods []interfaces.Authenticator
 	// If provided, username/password authentication is enabled,
 	// by appending a UserPassAuthenticator to AuthMethods. If not provided,
 	// and authMethods is nil, then "no-auth" mode is enabled.
-	credentials CredentialStore
+	credentials interfaces.Credentials
 	// resolver can be provided to do custom name resolution.
 	// Defaults to DNSResolver if not provided.
 	resolver NameResolver
@@ -47,7 +50,7 @@ type Server struct {
 	useBindIpBaseResolveAsUdpAddr bool
 	// logger can be used to provide a custom log target.
 	// Defaults to io.Discard.
-	logger Logger
+	logger interfaces.Logger
 	// Optional function for dialing out.
 	// The callback set by dialWithRequest will be called first.
 	dial func(ctx context.Context, network, addr string) (net.Conn, error)
@@ -70,11 +73,11 @@ type Server struct {
 // NewServer creates a new Server
 func NewServer(opts ...Option) *Server {
 	srv := &Server{
-		authMethods: []Authenticator{},
+		authMethods: []interfaces.Authenticator{},
 		bufferPool:  bufferpool.NewPool(32 * 1024),
 		resolver:    DNSResolver{},
 		rules:       NewPermitAll(),
-		logger:      NewLogger(log.New(io.Discard, "socks5: ", log.LstdFlags)),
+		logger:      loggers.NewStandard(log.New(io.Discard, "socks5: ", log.LstdFlags)),
 	}
 
 	for _, opt := range opts {
@@ -83,10 +86,10 @@ func NewServer(opts ...Option) *Server {
 
 	// Ensure we have at least one authentication method enabled
 	if (len(srv.authMethods) == 0) && srv.credentials != nil {
-		srv.authMethods = []Authenticator{&UserPassAuthenticator{srv.credentials}}
+		srv.authMethods = []interfaces.Authenticator{&authenticators.UserPass{srv.credentials}}
 	}
 	if len(srv.authMethods) == 0 {
-		srv.authMethods = []Authenticator{&NoAuthAuthenticator{}}
+		srv.authMethods = []interfaces.Authenticator{&authenticators.NoAuth{}}
 	}
 
 	return srv
@@ -128,7 +131,8 @@ func (sf *Server) Serve(l net.Listener) error {
 
 // ServeConn is used to serve a single connection.
 func (sf *Server) ServeConn(conn net.Conn) error {
-	var authContext *AuthContext
+
+	var authContext *types.AuthContext
 
 	defer conn.Close() // nolint: errcheck
 
@@ -138,7 +142,7 @@ func (sf *Server) ServeConn(conn net.Conn) error {
 	if err != nil {
 		return err
 	}
-	if mr.Ver != statute.VersionSocks5 {
+	if mr.Ver != protocol.Version5 {
 		return statute.ErrNotSupportVersion
 	}
 
@@ -181,7 +185,7 @@ func (sf *Server) ServeConn(conn net.Conn) error {
 
 // authenticate is used to handle connection authentication
 func (sf *Server) authenticate(conn io.Writer, bufConn io.Reader,
-	userAddr string, methods []byte) (*AuthContext, error) {
+	userAddr string, methods []byte) (*types.AuthContext, error) {
 	// Select a usable method
 	for _, auth := range sf.authMethods {
 		for _, method := range methods {
@@ -191,8 +195,8 @@ func (sf *Server) authenticate(conn io.Writer, bufConn io.Reader,
 		}
 	}
 	// No usable method found
-	conn.Write([]byte{statute.VersionSocks5, statute.MethodNoAcceptable}) //nolint: errcheck
-	return nil, statute.ErrNoSupportedAuth
+	conn.Write([]byte{protocol.Version5, statute.MethodNoAcceptable}) //nolint: errcheck
+	return nil, socks_errors.AuthUnsupportedMethod
 }
 
 func (sf *Server) goFunc(f func()) {

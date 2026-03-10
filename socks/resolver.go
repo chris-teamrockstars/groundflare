@@ -1,9 +1,7 @@
-package socks5
+package socks
 
-import (
-	"context"
-	"net"
-)
+import "context"
+import "net"
 
 // NameResolver is used to implement custom name resolution
 type NameResolver interface {

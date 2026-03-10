@@ -1,15 +1,11 @@
-package socks5
+package socks
 
-import (
-	"bytes"
-	"errors"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"groundflare/socks/statute"
-)
+import "bytes"
+import "errors"
+import "testing"
+import "github.com/stretchr/testify/assert"
+import "github.com/stretchr/testify/require"
+import "groundflare/socks/statute"
 
 func TestNoAuth(t *testing.T) {
 	req := bytes.NewBuffer(nil)

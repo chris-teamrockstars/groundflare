@@ -1,10 +1,4 @@
-package socks5
-
-// CredentialStore is used to support user/pass authentication optional network addr
-// if you want to limit user network addr,you can refuse it.
-type CredentialStore interface {
-	Valid(user, password, userAddr string) bool
-}
+package socks
 
 // StaticCredentials enables using a map directly as a credential store
 type StaticCredentials map[string]string

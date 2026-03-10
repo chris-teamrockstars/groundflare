@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"groundflare/socks/protocol"
 )
 
 // Request represents the SOCKS5 request, it contains everything that is not payload
@@ -34,7 +35,7 @@ func ParseRequest(r io.Reader) (req Request, err error) {
 		return req, fmt.Errorf("failed to get request version and command, %v", err)
 	}
 	req.Version, req.Command = tmp[0], tmp[1]
-	if req.Version != VersionSocks5 {
+	if req.Version != protocol.Version5 {
 		return req, fmt.Errorf("unrecognized SOCKS version[%d]", req.Version)
 	}
 
@@ -157,7 +158,7 @@ func ParseReply(r io.Reader) (rep Reply, err error) {
 		return rep, fmt.Errorf("failed to get reply version and command, %v", err)
 	}
 	rep.Version, rep.Response = tmp[0], tmp[1]
-	if rep.Version != VersionSocks5 {
+	if rep.Version != protocol.Version5 {
 		return rep, fmt.Errorf("unrecognized SOCKS version[%d]", rep.Version)
 	}
 	// Read reserved and address type

@@ -1,12 +1,9 @@
-package socks5
+package socks
 
-import (
-	"context"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-)
+import "context"
+import "testing"
+import "github.com/stretchr/testify/assert"
+import "github.com/stretchr/testify/require"
 
 func TestDNSResolver(t *testing.T) {
 	d := DNSResolver{}

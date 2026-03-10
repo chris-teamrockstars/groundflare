@@ -1,18 +1,14 @@
-package socks5
+package socks
 
-import (
-	"bytes"
-	"io"
-	"log"
-	"net"
-	"os"
-	"testing"
-
-	"github.com/stretchr/testify/require"
-
-	"groundflare/socks/bufferpool"
-	"groundflare/socks/statute"
-)
+import "bytes"
+import "io"
+import "log"
+import "net"
+import "os"
+import "testing"
+import "github.com/stretchr/testify/require"
+import "groundflare/socks/bufferpool"
+import "groundflare/socks/statute"
 
 type MockConn struct {
 	buf bytes.Buffer

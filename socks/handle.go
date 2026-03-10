@@ -1,16 +1,15 @@
-package socks5
+package socks
 
-import (
-	"context"
-	"errors"
-	"fmt"
-	"io"
-	"net"
-	"strings"
-	"sync"
-
-	"groundflare/socks/statute"
-)
+import "context"
+import "errors"
+import "fmt"
+import "io"
+import "net"
+import "strings"
+import "sync"
+import "groundflare/socks/protocol"
+import "groundflare/socks/statute"
+import "groundflare/socks/types"
 
 // AddressRewriter is used to rewrite a destination transparently
 type AddressRewriter interface {
@@ -21,7 +20,7 @@ type AddressRewriter interface {
 type Request struct {
 	statute.Request
 	// AuthContext provided during negotiation
-	AuthContext *AuthContext
+	AuthContext *types.AuthContext
 	// LocalAddr of the network server listen
 	LocalAddr net.Addr
 	// RemoteAddr of the network that sent the request
@@ -325,7 +324,7 @@ func (sf *Server) handleAssociate(ctx context.Context, writer io.Writer, request
 // rep: reply status see statute's statute file
 func SendReply(w io.Writer, rep uint8, bindAddr net.Addr) error {
 	rsp := statute.Reply{
-		Version:  statute.VersionSocks5,
+		Version:  protocol.Version5,
 		Response: rep,
 		BndAddr: statute.AddrSpec{
 			AddrType: statute.ATYPIPv4,

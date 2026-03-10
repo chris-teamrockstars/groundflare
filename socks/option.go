@@ -1,12 +1,10 @@
-package socks5
+package socks
 
-import (
-	"context"
-	"io"
-	"net"
-
-	"groundflare/socks/bufferpool"
-)
+import "context"
+import "io"
+import "net"
+import "groundflare/socks/bufferpool"
+import "groundflare/socks/interfaces"
 
 // Option user's option
 type Option func(s *Server)
@@ -22,18 +20,18 @@ func WithBufferPool(bufferPool bufferpool.BufPool) Option {
 // WithAuthMethods can be provided to implement custom authentication
 // By default, "auth-less" mode is enabled.
 // For password-based auth use UserPassAuthenticator.
-func WithAuthMethods(authMethods []Authenticator) Option {
-	return func(s *Server) {
-		s.authMethods = append(s.authMethods, authMethods...)
+func WithAuthMethods(authMethods []interfaces.Authenticator) Option {
+	return func(server *Server) {
+		server.authMethods = append(server.authMethods, authMethods...)
 	}
 }
 
 // WithCredential If provided, username/password authentication is enabled,
 // by appending a UserPassAuthenticator to AuthMethods. If not provided,
 // and AUthMethods is nil, then "auth-less" mode is enabled.
-func WithCredential(cs CredentialStore) Option {
-	return func(s *Server) {
-		s.credentials = cs
+func WithCredential(credentials interfaces.Credentials) Option {
+	return func(server *Server) {
+		server.credentials = credentials
 	}
 }
 
@@ -74,7 +72,7 @@ func WithBindIP(ip net.IP) Option {
 
 // WithLogger can be used to provide a custom log target.
 // Defaults to io.Discard.
-func WithLogger(l Logger) Option {
+func WithLogger(l interfaces.Logger) Option {
 	return func(s *Server) {
 		s.logger = l
 	}

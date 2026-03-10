@@ -13,12 +13,12 @@ import "groundflare/socks/types"
 
 // AddressRewriter is used to rewrite a destination transparently
 type AddressRewriter interface {
-	Rewrite(ctx context.Context, request *Request) (context.Context, *statute.AddrSpec)
+	Rewrite(ctx context.Context, request *Request) (context.Context, *types.Address)
 }
 
 // A Request represents request received by a server
 type Request struct {
-	statute.Request
+	protocol.Request
 	// AuthContext provided during negotiation
 	AuthContext *types.AuthContext
 	// LocalAddr of the network server listen
@@ -26,22 +26,22 @@ type Request struct {
 	// RemoteAddr of the network that sent the request
 	RemoteAddr net.Addr
 	// DestAddr of the actual destination (might be affected by rewrite)
-	DestAddr *statute.AddrSpec
+	DestAddr *types.Address
 	// Reader connect of request
 	Reader io.Reader
 	// RawDestAddr of the desired destination
-	RawDestAddr *statute.AddrSpec
+	RawDestAddr *types.Address
 }
 
 // ParseRequest creates a new Request from the tcp connection
 func ParseRequest(bufConn io.Reader) (*Request, error) {
-	hd, err := statute.ParseRequest(bufConn)
+	hd, err := protocol.ParseRequest(bufConn)
 	if err != nil {
 		return nil, err
 	}
 	return &Request{
-		Request:     hd,
-		RawDestAddr: &hd.DstAddr,
+		Request:     *hd,
+		RawDestAddr: &hd.Address,
 		Reader:      bufConn,
 	}, nil
 }
@@ -326,10 +326,10 @@ func SendReply(w io.Writer, rep uint8, bindAddr net.Addr) error {
 	rsp := statute.Reply{
 		Version:  protocol.Version5,
 		Response: rep,
-		BndAddr: statute.AddrSpec{
-			AddrType: protocol.AddressTypeIPv4,
-			IP:       net.IPv4zero,
-			Port:     0,
+		BndAddr: types.Address{
+			Type: types.AddressTypeIPv4,
+			IP:   net.IPv4zero,
+			Port: 0,
 		},
 	}
 
@@ -345,9 +345,9 @@ func SendReply(w io.Writer, rep uint8, bindAddr net.Addr) error {
 		}
 
 		if rsp.BndAddr.IP.To4() != nil {
-			rsp.BndAddr.AddrType = protocol.AddressTypeIPv4
+			rsp.BndAddr.Type = types.AddressTypeIPv4
 		} else if rsp.BndAddr.IP.To16() != nil {
-			rsp.BndAddr.AddrType = protocol.AddressTypeIPv6
+			rsp.BndAddr.Type = types.AddressTypeIPv6
 		}
 	}
 	// Send the message

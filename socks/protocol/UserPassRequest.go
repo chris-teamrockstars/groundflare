@@ -80,7 +80,7 @@ func ParseUserPassRequest(reader io.Reader) (*UserPassRequest, error) {
 
 }
 
-func (request UserPassRequest) Bytes() []byte {
+func (request *UserPassRequest) Bytes() []byte {
 
 	bytes := make([]byte, 0, 2 + len(request.Username) + 1 + len(request.Password))
 	bytes = append(bytes, request.Version)

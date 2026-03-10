@@ -5,7 +5,7 @@ import "errors"
 import "fmt"
 import "math"
 import "net"
-import "groundflare/socks/protocol"
+import "groundflare/socks/types"
 
 // Datagram udp packet
 // The SOCKS UDP request/response is formed as follows:
@@ -17,22 +17,31 @@ import "groundflare/socks/protocol"
 type Datagram struct {
 	RSV     uint16
 	Frag    byte
-	DstAddr AddrSpec
+	DstAddr types.Address
 	Data    []byte
 }
 
-// NewDatagram new packet with dest addr and data
-func NewDatagram(destAddr string, data []byte) (p Datagram, err error) {
-	p.DstAddr, err = ParseAddrSpec(destAddr)
-	if err != nil {
-		return
+func NewDatagram(destination string, data []byte) (*Datagram, error) {
+
+	tmp_address, err0 := types.ParseAddress(destination)
+
+	if err0 == nil {
+
+		if tmp_address.Type == types.AddressTypeDomain && len(tmp_address.FQDN) > math.MaxUint8 {
+			return nil, errors.New("destination host name too long")
+		}
+
+		return &Datagram{
+			RSV:     0,
+			Frag:    0,
+			DstAddr: *tmp_address,
+			Data:    data,
+		}, nil
+
+	} else {
+		return nil, err0
 	}
-	if p.DstAddr.AddrType == protocol.AddressTypeDomain && len(p.DstAddr.FQDN) > math.MaxUint8 {
-		err = errors.New("destination host name too long")
-		return
-	}
-	p.RSV, p.Frag, p.Data = 0, 0, data
-	return
+
 }
 
 // ParseDatagram parse to datagram from bytes
@@ -45,15 +54,17 @@ func ParseDatagram(b []byte) (da Datagram, err error) {
 	}
 	// ignore RSV
 	// get FRAG and Address  type
-	da.RSV, da.Frag, da.DstAddr.AddrType = 0, b[2], b[3]
+	da.RSV = 0
+	da.Frag = b[2]
+	da.DstAddr.Type = types.AddressType(b[3])
 
 	headLen := 4
-	switch da.DstAddr.AddrType {
-	case protocol.AddressTypeIPv4:
+	switch da.DstAddr.Type {
+	case types.AddressTypeIPv4:
 		headLen += net.IPv4len + 2
 		da.DstAddr.IP = net.IPv4(b[4], b[5], b[6], b[7])
 		da.DstAddr.Port = int(binary.BigEndian.Uint16((b[headLen-2:])))
-	case protocol.AddressTypeIPv6:
+	case types.AddressTypeIPv6:
 		headLen += net.IPv6len + 2
 		if len(b) <= headLen {
 			err = errors.New("datagram to short")
@@ -62,7 +73,7 @@ func ParseDatagram(b []byte) (da Datagram, err error) {
 
 		da.DstAddr.IP = b[4 : 4+net.IPv6len]
 		da.DstAddr.Port = int(binary.BigEndian.Uint16(b[headLen-2:]))
-	case protocol.AddressTypeDomain:
+	case types.AddressTypeDomain:
 		addrLen := int(b[4])
 		headLen += 1 + addrLen + 2
 		if len(b) <= headLen {
@@ -93,18 +104,18 @@ func (sf *Datagram) values(hasData bool) (bs []byte) {
 	var addr []byte
 
 	length := 6
-	switch sf.DstAddr.AddrType {
-	case protocol.AddressTypeIPv4:
+	switch sf.DstAddr.Type {
+	case types.AddressTypeIPv4:
 		length += net.IPv4len
 		addr = sf.DstAddr.IP.To4()
-	case protocol.AddressTypeIPv6:
+	case types.AddressTypeIPv6:
 		length += net.IPv6len
 		addr = sf.DstAddr.IP.To16()
-	case protocol.AddressTypeDomain:
+	case types.AddressTypeDomain:
 		length += 1 + len(sf.DstAddr.FQDN)
 		addr = []byte(sf.DstAddr.FQDN)
 	default:
-		panic(fmt.Sprintf("invalid address type: %d", sf.DstAddr.AddrType))
+		panic(fmt.Sprintf("invalid address type: %d", sf.DstAddr.Type))
 	}
 	if hasData {
 		bs = make([]byte, 0, length+len(sf.Data))
@@ -112,8 +123,8 @@ func (sf *Datagram) values(hasData bool) (bs []byte) {
 		bs = make([]byte, 0, length)
 	}
 
-	bs = append(bs, byte(sf.RSV<<8), byte(sf.RSV), sf.Frag, sf.DstAddr.AddrType)
-	if sf.DstAddr.AddrType == protocol.AddressTypeDomain {
+	bs = append(bs, byte(sf.RSV<<8), byte(sf.RSV), sf.Frag, byte(sf.DstAddr.Type))
+	if sf.DstAddr.Type == types.AddressTypeDomain {
 		bs = append(bs, byte(len(sf.DstAddr.FQDN)))
 	}
 	bs = append(bs, addr...)

@@ -1,4 +1,4 @@
-package bufferpool
+package socks
 
 import (
 	"sync"

@@ -15,7 +15,7 @@ import "groundflare/socks/types"
 type Server struct {
 
 	AuthMethods []interfaces.Authenticator
-	BufferPool  types.BufferPool
+	BufferPool  interfaces.BufferPool
 	Credentials interfaces.Credentials
 	Logger      interfaces.Logger
 	Resolver    interfaces.Resolver
@@ -108,6 +108,7 @@ func (server *Server) ServeConnection(connection net.Conn) error {
 
 	buffer_reader := bufio.NewReader(connection)
 
+	// TODO: Continue here with refactor
 
 
 }

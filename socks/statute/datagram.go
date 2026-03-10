@@ -1,12 +1,11 @@
 package statute
 
-import (
-	"encoding/binary"
-	"errors"
-	"fmt"
-	"math"
-	"net"
-)
+import "encoding/binary"
+import "errors"
+import "fmt"
+import "math"
+import "net"
+import "groundflare/socks/protocol"
 
 // Datagram udp packet
 // The SOCKS UDP request/response is formed as follows:
@@ -28,7 +27,7 @@ func NewDatagram(destAddr string, data []byte) (p Datagram, err error) {
 	if err != nil {
 		return
 	}
-	if p.DstAddr.AddrType == ATYPDomain && len(p.DstAddr.FQDN) > math.MaxUint8 {
+	if p.DstAddr.AddrType == protocol.AddressTypeDomain && len(p.DstAddr.FQDN) > math.MaxUint8 {
 		err = errors.New("destination host name too long")
 		return
 	}
@@ -50,11 +49,11 @@ func ParseDatagram(b []byte) (da Datagram, err error) {
 
 	headLen := 4
 	switch da.DstAddr.AddrType {
-	case ATYPIPv4:
+	case protocol.AddressTypeIPv4:
 		headLen += net.IPv4len + 2
 		da.DstAddr.IP = net.IPv4(b[4], b[5], b[6], b[7])
 		da.DstAddr.Port = int(binary.BigEndian.Uint16((b[headLen-2:])))
-	case ATYPIPv6:
+	case protocol.AddressTypeIPv6:
 		headLen += net.IPv6len + 2
 		if len(b) <= headLen {
 			err = errors.New("datagram to short")
@@ -63,7 +62,7 @@ func ParseDatagram(b []byte) (da Datagram, err error) {
 
 		da.DstAddr.IP = b[4 : 4+net.IPv6len]
 		da.DstAddr.Port = int(binary.BigEndian.Uint16(b[headLen-2:]))
-	case ATYPDomain:
+	case protocol.AddressTypeDomain:
 		addrLen := int(b[4])
 		headLen += 1 + addrLen + 2
 		if len(b) <= headLen {
@@ -95,13 +94,13 @@ func (sf *Datagram) values(hasData bool) (bs []byte) {
 
 	length := 6
 	switch sf.DstAddr.AddrType {
-	case ATYPIPv4:
+	case protocol.AddressTypeIPv4:
 		length += net.IPv4len
 		addr = sf.DstAddr.IP.To4()
-	case ATYPIPv6:
+	case protocol.AddressTypeIPv6:
 		length += net.IPv6len
 		addr = sf.DstAddr.IP.To16()
-	case ATYPDomain:
+	case protocol.AddressTypeDomain:
 		length += 1 + len(sf.DstAddr.FQDN)
 		addr = []byte(sf.DstAddr.FQDN)
 	default:
@@ -114,7 +113,7 @@ func (sf *Datagram) values(hasData bool) (bs []byte) {
 	}
 
 	bs = append(bs, byte(sf.RSV<<8), byte(sf.RSV), sf.Frag, sf.DstAddr.AddrType)
-	if sf.DstAddr.AddrType == ATYPDomain {
+	if sf.DstAddr.AddrType == protocol.AddressTypeDomain {
 		bs = append(bs, byte(len(sf.DstAddr.FQDN)))
 	}
 	bs = append(bs, addr...)

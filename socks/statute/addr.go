@@ -1,10 +1,9 @@
 package statute
 
-import (
-	"fmt"
-	"net"
-	"strconv"
-)
+import "fmt"
+import "net"
+import "strconv"
+import "groundflare/socks/protocol"
 
 // AddrSpec is used to return the target AddrSpec
 // which may be specified as IPv4, IPv6, or a FQDN
@@ -51,11 +50,11 @@ func ParseAddrSpec(addr string) (as AddrSpec, err error) {
 
 	ip := net.ParseIP(host)
 	if ip4 := ip.To4(); ip4 != nil {
-		as.AddrType, as.IP = ATYPIPv4, ip
+		as.AddrType, as.IP = protocol.AddressTypeIPv4, ip
 	} else if ip6 := ip.To16(); ip6 != nil {
-		as.AddrType, as.IP = ATYPIPv6, ip
+		as.AddrType, as.IP = protocol.AddressTypeIPv6, ip
 	} else {
-		as.AddrType, as.FQDN = ATYPDomain, host
+		as.AddrType, as.FQDN = protocol.AddressTypeDomain, host
 	}
 	return
 }

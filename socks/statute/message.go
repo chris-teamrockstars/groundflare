@@ -1,12 +1,10 @@
 package statute
 
-import (
-	"encoding/binary"
-	"fmt"
-	"io"
-	"net"
-	"groundflare/socks/protocol"
-)
+import "encoding/binary"
+import "fmt"
+import "io"
+import "net"
+import "groundflare/socks/protocol"
 
 // Request represents the SOCKS5 request, it contains everything that is not payload
 // The SOCKS5 request is formed as follows:
@@ -46,21 +44,21 @@ func ParseRequest(r io.Reader) (req Request, err error) {
 	req.Reserved, req.DstAddr.AddrType = tmp[0], tmp[1]
 
 	switch req.DstAddr.AddrType {
-	case ATYPIPv4:
+	case protocol.AddressTypeIPv4:
 		addr := make([]byte, net.IPv4len+2)
 		if _, err = io.ReadFull(r, addr); err != nil {
 			return req, fmt.Errorf("failed to get request, %v", err)
 		}
 		req.DstAddr.IP = net.IPv4(addr[0], addr[1], addr[2], addr[3])
 		req.DstAddr.Port = int(binary.BigEndian.Uint16(addr[net.IPv4len:]))
-	case ATYPIPv6:
+	case protocol.AddressTypeIPv6:
 		addr := make([]byte, net.IPv6len+2)
 		if _, err = io.ReadFull(r, addr); err != nil {
 			return req, fmt.Errorf("failed to get request, %v", err)
 		}
 		req.DstAddr.IP = addr[:net.IPv6len]
 		req.DstAddr.Port = int(binary.BigEndian.Uint16(addr[net.IPv6len:]))
-	case ATYPDomain:
+	case protocol.AddressTypeDomain:
 		if _, err = io.ReadFull(r, tmp[:1]); err != nil {
 			return req, fmt.Errorf("failed to get request, %v", err)
 		}
@@ -83,20 +81,20 @@ func (h Request) Bytes() (b []byte) {
 
 	length := 6
 	switch h.DstAddr.AddrType {
-	case ATYPIPv4:
+	case protocol.AddressTypeIPv4:
 		length += net.IPv4len
 		addr = h.DstAddr.IP.To4()
-	case ATYPIPv6:
+	case protocol.AddressTypeIPv6:
 		length += net.IPv6len
 		addr = h.DstAddr.IP.To16()
-	default: // ATYPDomain
+	default: // protocol.AddressTypeDomain
 		length += 1 + len(h.DstAddr.FQDN)
 		addr = []byte(h.DstAddr.FQDN)
 	}
 
 	b = make([]byte, 0, length)
 	b = append(b, h.Version, h.Command, h.Reserved, h.DstAddr.AddrType)
-	if h.DstAddr.AddrType == ATYPDomain {
+	if h.DstAddr.AddrType == protocol.AddressTypeDomain {
 		b = append(b, byte(len(h.DstAddr.FQDN)))
 	}
 	b = append(b, addr...)
@@ -129,20 +127,20 @@ func (sf Reply) Bytes() (b []byte) {
 
 	length := 6
 	switch sf.BndAddr.AddrType {
-	case ATYPIPv4:
+	case protocol.AddressTypeIPv4:
 		length += net.IPv4len
 		addr = sf.BndAddr.IP.To4()
-	case ATYPIPv6:
+	case protocol.AddressTypeIPv6:
 		length += net.IPv6len
 		addr = sf.BndAddr.IP.To16()
-	default: // ATYPDomain
+	default: // protocol.AddressTypeDomain
 		length += 1 + len(sf.BndAddr.FQDN)
 		addr = []byte(sf.BndAddr.FQDN)
 	}
 
 	b = make([]byte, 0, length)
 	b = append(b, sf.Version, sf.Response, sf.Reserved, sf.BndAddr.AddrType)
-	if sf.BndAddr.AddrType == ATYPDomain {
+	if sf.BndAddr.AddrType == protocol.AddressTypeDomain {
 		b = append(b, byte(len(sf.BndAddr.FQDN)))
 	}
 	b = append(b, addr...)
@@ -168,7 +166,7 @@ func ParseReply(r io.Reader) (rep Reply, err error) {
 	rep.Reserved, rep.BndAddr.AddrType = tmp[0], tmp[1]
 
 	switch rep.BndAddr.AddrType {
-	case ATYPDomain:
+	case protocol.AddressTypeDomain:
 		if _, err = io.ReadFull(r, tmp[:1]); err != nil {
 			return rep, fmt.Errorf("failed to get reply, %v", err)
 		}
@@ -179,14 +177,14 @@ func ParseReply(r io.Reader) (rep Reply, err error) {
 		}
 		rep.BndAddr.FQDN = string(addr[:domainLen])
 		rep.BndAddr.Port = int(binary.BigEndian.Uint16(addr[domainLen:]))
-	case ATYPIPv4:
+	case protocol.AddressTypeIPv4:
 		addr := make([]byte, net.IPv4len+2)
 		if _, err = io.ReadFull(r, addr); err != nil {
 			return rep, fmt.Errorf("failed to get reply, %v", err)
 		}
 		rep.BndAddr.IP = net.IPv4(addr[0], addr[1], addr[2], addr[3])
 		rep.BndAddr.Port = int(binary.BigEndian.Uint16(addr[net.IPv4len:]))
-	case ATYPIPv6:
+	case protocol.AddressTypeIPv6:
 		addr := make([]byte, net.IPv6len+2)
 		if _, err = io.ReadFull(r, addr); err != nil {
 			return rep, fmt.Errorf("failed to get reply, %v", err)

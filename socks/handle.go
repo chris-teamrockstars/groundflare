@@ -82,7 +82,7 @@ func (sf *Server) handleRequest(write io.Writer, req *Request) error {
 	var last Handler
 	// Switch on the command
 	switch req.Command {
-	case statute.CommandConnect:
+	case protocol.CommandConnect:
 		last = sf.handleConnect
 		if sf.userConnectHandle != nil {
 			last = sf.userConnectHandle
@@ -90,7 +90,7 @@ func (sf *Server) handleRequest(write io.Writer, req *Request) error {
 		if len(sf.userConnectMiddlewares) != 0 {
 			return sf.userConnectMiddlewares.Execute(ctx, write, req, last)
 		}
-	case statute.CommandBind:
+	case protocol.CommandBind:
 		last = sf.handleBind
 		if sf.userBindHandle != nil {
 			last = sf.userBindHandle
@@ -98,7 +98,7 @@ func (sf *Server) handleRequest(write io.Writer, req *Request) error {
 		if len(sf.userBindMiddlewares) != 0 {
 			return sf.userBindMiddlewares.Execute(ctx, write, req, last)
 		}
-	case statute.CommandAssociate:
+	case protocol.CommandAssociate:
 		last = sf.handleAssociate
 		if sf.userAssociateHandle != nil {
 			last = sf.userAssociateHandle
@@ -327,7 +327,7 @@ func SendReply(w io.Writer, rep uint8, bindAddr net.Addr) error {
 		Version:  protocol.Version5,
 		Response: rep,
 		BndAddr: statute.AddrSpec{
-			AddrType: statute.ATYPIPv4,
+			AddrType: protocol.AddressTypeIPv4,
 			IP:       net.IPv4zero,
 			Port:     0,
 		},
@@ -345,9 +345,9 @@ func SendReply(w io.Writer, rep uint8, bindAddr net.Addr) error {
 		}
 
 		if rsp.BndAddr.IP.To4() != nil {
-			rsp.BndAddr.AddrType = statute.ATYPIPv4
+			rsp.BndAddr.AddrType = protocol.AddressTypeIPv4
 		} else if rsp.BndAddr.IP.To16() != nil {
-			rsp.BndAddr.AddrType = statute.ATYPIPv6
+			rsp.BndAddr.AddrType = protocol.AddressTypeIPv6
 		}
 	}
 	// Send the message

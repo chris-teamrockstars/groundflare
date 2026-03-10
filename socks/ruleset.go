@@ -1,7 +1,7 @@
 package socks
 
 import "context"
-import "groundflare/socks/statute"
+import "groundflare/socks/protocol"
 
 // RuleSet is used to provide custom rules to allow or prohibit actions
 type RuleSet interface {
@@ -34,11 +34,11 @@ func NewPermitConnAndAss() RuleSet {
 // Allow implement interface RuleSet
 func (p *PermitCommand) Allow(ctx context.Context, req *Request) (context.Context, bool) {
 	switch req.Command {
-	case statute.CommandConnect:
+	case protocol.CommandConnect:
 		return ctx, p.EnableConnect
-	case statute.CommandBind:
+	case protocol.CommandBind:
 		return ctx, p.EnableBind
-	case statute.CommandAssociate:
+	case protocol.CommandAssociate:
 		return ctx, p.EnableAssociate
 	}
 	return ctx, false

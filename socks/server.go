@@ -167,9 +167,9 @@ func (sf *Server) ServeConn(conn net.Conn) error {
 		return fmt.Errorf("failed to read destination address, %w", err)
 	}
 
-	if request.Request.Command != statute.CommandConnect && // nolint: staticcheck
-		request.Request.Command != statute.CommandBind && // nolint: staticcheck
-		request.Request.Command != statute.CommandAssociate { // nolint: staticcheck
+	if request.Request.Command != protocol.CommandConnect && // nolint: staticcheck
+		request.Request.Command != protocol.CommandBind && // nolint: staticcheck
+		request.Request.Command != protocol.CommandAssociate { // nolint: staticcheck
 		if err := SendReply(conn, statute.RepCommandNotSupported, nil); err != nil {
 			return fmt.Errorf("failed to send reply, %v", err)
 		}
@@ -195,7 +195,7 @@ func (sf *Server) authenticate(conn io.Writer, bufConn io.Reader,
 		}
 	}
 	// No usable method found
-	conn.Write([]byte{protocol.Version5, statute.MethodNoAcceptable}) //nolint: errcheck
+	conn.Write([]byte{protocol.Version5, protocol.MethodNoAcceptableMethods}) //nolint: errcheck
 	return nil, socks_errors.AuthUnsupportedMethod
 }
 
